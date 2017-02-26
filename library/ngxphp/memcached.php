@@ -128,12 +128,12 @@ class memcached {
 
         $data = explode("\r\n", $data);
 
-        return isset($data[1])?$data[1]:null;
+        return isset($data[1]) ? $data[1] : null;
     }
 
     public function delete($key = '') {
         if (!$this->socket) {
-            throw new Exception("Socket not initialized at get.");
+            throw new Exception("Socket not initialized at delete.");
         }
 
         $req = "delete {$key}\r\n";
@@ -147,6 +147,64 @@ class memcached {
         }
 
         return false;
+    }
+
+    public function incr($key = '', $value = 0) {
+        if (!$this->socket) {
+            throw new Exception("Socket not initialized at incr.");
+        }
+
+        $req = "incr {$key} {$value}\r\n";
+
+        $this->socket->send($req);
+
+        $data = $this->socket->receive();
+
+        if ($data == "NOT_FOUND\r\n") {
+            return 0;
+        }
+
+        $data = explode("\r\n", $data);
+
+        return isset($data[0]) ? intval($data[0]) : 0;
+    }
+
+    public function decr($key = '', $value = 0) {
+        if (!$this->socket) {
+            throw new Exception("Socket not initialized at decr.");
+        }
+
+        $req = "decr {$key} {$value}\r\n";
+
+        $this->socket->send($req);
+
+        $data = $this->socket->receive();
+
+        if ($data == "NOT_FOUND\r\n") {
+            return 0;
+        }
+
+        $data = explode("\r\n", $data);
+
+        return isset($data[0]) ? intval($data[0]) : 0;
+    }
+
+    public function version() {
+        if (!$this->socket) {
+            throw new Exception("Socket not initialized at version.");
+        }
+
+        $req = "version\r\n";
+
+        $this->socket->send($req);
+
+        $data = $this->socket->receive();
+
+        if (preg_match("/^VERSION (.+)\r\n$/", $data, $match) > 0) {
+            return isset($match[1]) ? $match[1] : null;
+        }
+
+        return null;
     }
 
 }
