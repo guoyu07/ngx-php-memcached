@@ -3,6 +3,10 @@
  *  Copyright(c) 2017 rryqszq4 ngxphp@gmail.com
  */
 
+namespace ngxphp\memcached;
+
+use ngx_socket_tcp;
+
 class memcached {
 
     const VERSION = "0.01";
@@ -189,6 +193,28 @@ class memcached {
         return isset($data[0]) ? intval($data[0]) : 0;
     }
 
+    public function flush_all($time = 0) {
+        if (!$this->socket) {
+            throw new Exception("Socket not initialized at flush_all.");
+        }
+
+        if ($time) {
+            $req = "flush_all {$time}\r\n";
+        }else {
+            $req = "flush_all\r\n";
+        }
+
+        $this->socket->send($req);
+
+        $data = $this->socket->receive();
+
+        if ($data != "OK\r\n") {
+            return 0;
+        }
+
+        return 1;
+    }
+
     public function version() {
         if (!$this->socket) {
             throw new Exception("Socket not initialized at version.");
@@ -207,10 +233,38 @@ class memcached {
         return null;
     }
 
+    public function stats($arg = '') {
+        if (!$this->socket) {
+            throw new Exception("Socket not initialized at stats.");
+        }
+
+        if ($arg) {
+            $req = "stats {$arg}\r\n";
+        }else {
+            $req = "stats\r\n";
+        }
+
+        $this->socket->send($req);
+
+        $data = $this->socket->receive();
+
+        if ($data == "ERROR\r\n") {
+            return null;
+        }
+
+        $data = explode("\r\n",$data);
+
+        $new_data = array();
+        foreach ($data as $key => $value) {
+            $value = explode(" ", $value);
+            if (isset($value[1]) && isset($value[2])) {
+                $new_data[$value[1]] = $value[2];
+            }
+        }
+
+        return $new_data;
+    }
+
 }
-
-
-
-
 
 ?>
